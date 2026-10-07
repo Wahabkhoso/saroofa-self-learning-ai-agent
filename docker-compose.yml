@@ -1,0 +1,11 @@
+services:
+  agent:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Persist the database, vector store, and uploads across container restarts.
+      - ./data:/app/data
+    restart: unless-stopped

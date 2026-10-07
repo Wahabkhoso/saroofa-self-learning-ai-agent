@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Saroofa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --sidebar: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f2f3f6;
+    --line: #e6e8ec;
+    --text: #1c2130;
+    --text-muted: #6b7280;
+    --text-dim: #9aa1ae;
+    --accent: #4f6ef7;
+    --accent-2: #7c8ffa;
+    --accent-soft: rgba(79,110,247,.10);
+    --success: #16a375;
+    --success-soft: rgba(22,163,117,.10);
+    --fail: #e0473f;
+    --fail-soft: rgba(224,71,63,.10);
+    --partial: #b8790f;
+    --partial-soft: rgba(184,121,15,.10);
+    --sans: "Space Grotesk", -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --shadow: 0 1px 2px rgba(20,24,34,.04), 0 1px 8px rgba(20,24,34,.03);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+  ::selection { background: var(--accent-soft); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  .layout { display: grid; grid-template-columns: 240px 1fr 280px; height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  nav.rail { background: var(--sidebar); border-right: 1px solid var(--line); padding: 20px 14px; display: flex; flex-direction: column; overflow: hidden; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding: 4px; }
+  .brand .mark {
+    width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: 600; font-size: 12px; color: #fff;
+  }
+  .brand .name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; }
+  .brand .sub { font-size: 10.5px; color: var(--text-dim); font-family: var(--mono); }
+
+  .newChatBtn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    background: var(--accent-soft); border: 1px solid rgba(79,110,247,.25); border-radius: 9px;
+    padding: 9px 12px; font-family: var(--sans); font-size: 13px; font-weight: 600;
+    color: var(--accent); cursor: pointer; transition: background .12s; margin-bottom: 14px; flex-shrink: 0;
+  }
+  .newChatBtn:hover { background: rgba(79,110,247,.16); }
+  .newChatBtn svg { width: 15px; height: 15px; }
+
+  .sectionLabel { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-dim); margin: 0 0 10px; }
+
+  .chatSessionList { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; }
+  .chatSessionItem {
+    padding: 8px 10px; border-radius: 8px; cursor: pointer; border: 1px solid transparent;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chatSessionItem .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .chatSessionItem .title { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chatSessionItem .time { font-size: 10px; color: var(--text-dim); font-family: var(--mono); }
+  .chatSessionItem:hover { background: var(--surface-2); }
+  .chatSessionItem:hover .title { color: var(--text); }
+  .chatSessionItem.active { background: var(--accent-soft); border-color: rgba(79,110,247,.2); }
+  .chatSessionItem.active .title { color: var(--accent); font-weight: 500; }
+  .sessionListEmpty { font-size: 12px; color: var(--text-dim); padding: 4px 2px; line-height: 1.5; }
+  .sessionDeleteBtn {
+    background: none; border: none; color: var(--text-dim); cursor: pointer; flex-shrink: 0;
+    width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .1s, background .1s, color .1s;
+  }
+  .chatSessionItem:hover .sessionDeleteBtn { opacity: 1; }
+  .sessionDeleteBtn:hover { background: var(--fail-soft); color: var(--fail); }
+  .sessionDeleteBtn svg { width: 13px; height: 13px; }
+
+  .navlist { display: flex; flex-direction: column; gap: 2px; border-top: 1px solid var(--line); padding-top: 10px; flex-shrink: 0; }
+  .navlist button {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    padding: 9px 11px; background: transparent; border: none; border-radius: 8px;
+    color: var(--text-muted); cursor: pointer; font-family: var(--sans);
+    font-size: 13.5px; font-weight: 500; transition: background .12s, color .12s;
+  }
+  .navlist button svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+  .navlist button:hover { background: var(--surface-2); color: var(--text); }
+  .navlist button.active { background: var(--accent-soft); color: var(--accent); }
+  .navlist button.active svg { opacity: 1; stroke: var(--accent); }
+
+  .rail-foot { border-top: 1px solid var(--line); padding-top: 12px; flex-shrink: 0; }
+  .googleBtn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
+    padding: 9px 12px; font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+    color: var(--text); cursor: pointer; transition: background .12s, border-color .12s;
+  }
+  .googleBtn:hover { background: var(--surface-2); border-color: var(--text-dim); }
+  .googleBtn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ---------- Main ---------- */
+  main { display: flex; flex-direction: column; padding: 20px 28px; overflow: hidden; }
+  .view { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+  .view.active { display: flex; }
+
+  .view-head { margin-bottom: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .view-head h2 { font-size: 19px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .view-head p { font-size: 13px; color: var(--text-muted); margin: 0; }
+  .greeting { font-size: 12.5px; color: var(--text-dim); margin: 0 0 2px; }
+
+  .scopeToggle { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-muted); cursor: pointer; white-space: nowrap; padding-top: 3px; }
+  .scopeToggle input { cursor: pointer; }
+
+  /* Chat empty state */
+  .emptyState { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 16px; }
+  .emptyState .glyph {
+    width: 52px; height: 52px; border-radius: 13px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow);
+  }
+  .emptyState h3 { font-size: 21px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .emptyState p { font-size: 13.5px; color: var(--text-muted); margin: 0; max-width: 380px; line-height: 1.6; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 560px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--surface); color: var(--text-muted);
+    padding: 8px 14px; border-radius: 20px; font-size: 12.5px; font-family: var(--sans);
+    cursor: pointer; transition: border-color .12s, color .12s; box-shadow: var(--shadow);
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  #chatLog { flex: 1; overflow-y: auto; padding-right: 6px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 16px; }
+  .msg { max-width: 74%; }
+  .msg.user { margin-left: auto; }
+  .msg .role { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); margin-bottom: 5px; }
+  .msg.user .role { text-align: right; }
+  .msg .bubble { padding: 12px 15px; border-radius: 12px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+  .msg.user .bubble { background: var(--accent); color: #fff; border-radius: 12px 12px 2px 12px; }
+  .msg.agent .bubble { background: var(--surface); border: 1px solid var(--line); border-radius: 12px 12px 12px 2px; box-shadow: var(--shadow); }
+  .msg .meta { display: flex; align-items: center; gap: 8px; margin-top: 7px; font-family: var(--mono); font-size: 11px; flex-wrap: wrap; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 20px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .02em; border: 1px solid transparent; }
+  .badge.SUCCESS { background: var(--success-soft); color: var(--success); border-color: rgba(22,163,117,.2); }
+  .badge.PARTIAL_SUCCESS { background: var(--partial-soft); color: var(--partial); border-color: rgba(184,121,15,.2); }
+  .badge.FAILURE { background: var(--fail-soft); color: var(--fail); border-color: rgba(224,71,63,.2); }
+
+  .attachPreview {
+    display: none; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; font-size: 12.5px; color: var(--text-muted);
+  }
+  .attachPreview.visible { display: flex; }
+  .attachPreview .row { display: flex; align-items: center; gap: 8px; }
+  .attachPreview img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; }
+  .attachPreview .row button { background: none; border: none; color: var(--text-dim); cursor: pointer; margin-left: auto; font-size: 16px; line-height: 1; }
+  .attachPreview .row button:hover { color: var(--fail); }
+  .attachPreview .saveToKbRow { display: flex; align-items: center; gap: 6px; font-size: 11.5px; padding-left: 2px; }
+  .attachPreview .saveToKbRow input { cursor: pointer; }
+
+  .inputRow {
+    display: flex; gap: 8px; align-items: flex-end; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 12px; box-shadow: var(--shadow);
+    position: relative;
+  }
+  .inputRow textarea {
+    flex: 1; resize: none; background: transparent; border: none; outline: none;
+    color: var(--text); padding: 8px 0; font-size: 14px; font-family: var(--sans); line-height: 1.5;
+  }
+  .inputRow textarea::placeholder { color: var(--text-dim); }
+  .inputRow .sendBtn {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 10px; width: 38px; height: 38px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0; transition: opacity .12s;
+  }
+  .inputRow .sendBtn:disabled { opacity: .4; cursor: default; }
+  .inputRow button svg { width: 17px; height: 17px; }
+  .iconBtn {
+    background: transparent; border: none; color: var(--text-dim); width: 34px; height: 34px;
+    border-radius: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background .12s, color .12s;
+  }
+  .iconBtn:hover { background: var(--surface-2); color: var(--text); }
+  .iconBtn.recording { color: #fff; background: var(--fail); animation: pulse 1.2s ease-in-out infinite; }
+  .iconBtn.live-active { color: #fff; background: var(--accent); animation: pulseBlue 1.2s ease-in-out infinite; }
+  .iconBtn:disabled { opacity: .35; cursor: not-allowed; }
+  .iconBtn svg { width: 17px; height: 17px; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(224,71,63,.35); } 50% { box-shadow: 0 0 0 6px rgba(224,71,63,0); } }
+  @keyframes pulseBlue { 0%,100% { box-shadow: 0 0 0 0 rgba(79,110,247,.35); } 50% { box-shadow: 0 0 0 6px rgba(79,110,247,0); } }
+
+  .attachMenu {
+    display: none; position: absolute; bottom: 46px; left: 8px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 16px rgba(20,24,34,.12);
+    padding: 6px; min-width: 180px; z-index: 20;
+  }
+  .attachMenu.open { display: block; }
+  .attachMenuItem {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    padding: 9px 10px; background: none; border: none; border-radius: 8px; cursor: pointer;
+    font-family: var(--sans); font-size: 13px; color: var(--text);
+  }
+  .attachMenuItem:hover { background: var(--surface-2); }
+  .attachMenuItem svg { width: 17px; height: 17px; color: var(--text-dim); flex-shrink: 0; }
+  .attachMenuItem .label { display: flex; flex-direction: column; gap: 1px; }
+  .attachMenuItem .sub { font-size: 10.5px; color: var(--text-dim); font-weight: 400; }
+
+  /* ---------- Memory dashboard ---------- */
+  .statPanel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat .num { font-family: var(--mono); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .stat .label { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+
+  .scroll { overflow-y: auto; flex: 1; }
+
+  .expCard { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 13px 15px; margin-bottom: 8px; box-shadow: var(--shadow); }
+  .expCard .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .expCard .task { font-size: 13.5px; font-weight: 500; line-height: 1.4; }
+  .expCard .lesson { font-size: 12.5px; color: var(--text-muted); line-height: 1.55; margin-bottom: 7px; }
+  .expCard .stats { font-family: var(--mono); font-size: 11px; color: var(--text-dim); display: flex; gap: 14px; }
+
+  /* ---------- Task history ---------- */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; padding: 9px 10px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); font-weight: 500; border-bottom: 1px solid var(--line); }
+  td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.score { font-family: var(--mono); }
+  td.time { font-family: var(--mono); font-size: 11.5px; color: var(--text-dim); white-space: nowrap; }
+
+  /* ---------- Right rail: activity + stats ---------- */
+  aside { background: var(--sidebar); border-left: 1px solid var(--line); padding: 20px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+  aside h3 { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-dim); margin: 0 0 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  aside h3 .live { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+  aside h3 .titleText { flex: 1; }
+  .activityToggleBtn {
+    background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 2px;
+    display: flex; align-items: center; justify-content: center; border-radius: 6px;
+    transition: background .12s, color .12s, transform .15s;
+  }
+  .activityToggleBtn:hover { background: var(--surface-2); color: var(--text); }
+  .activityToggleBtn svg { width: 14px; height: 14px; }
+  .activityToggleBtn.collapsed svg { transform: rotate(-90deg); }
+  #activityPanel.collapsed { display: none; }
+
+  .steps { display: flex; flex-direction: column; }
+  .step { display: flex; gap: 10px; padding-bottom: 15px; position: relative; }
+  .step:not(:last-child)::before {
+    content: ""; position: absolute; left: 8px; top: 19px; bottom: -2px; width: 1px; background: var(--line);
+  }
+  .step .n {
+    font-family: var(--mono); font-size: 9.5px; width: 17px; height: 17px; border-radius: 50%;
+    border: 1px solid var(--line); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--text-dim); background: var(--surface); z-index: 1;
+  }
+  .step.done .n { border-color: var(--success); color: var(--success); }
+  .step.current .n { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .step p { margin: 1px 0 0; font-size: 12px; line-height: 1.4; color: var(--text-dim); }
+  .step.done p { color: var(--text-muted); }
+  .step.current p { color: var(--text); font-weight: 500; }
+  .empty-hint { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+  .statGrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .statMini { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+  .statMini .num { font-family: var(--mono); font-size: 16px; font-weight: 600; }
+  .statMini .label { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="rail">
+    <div class="brand">
+      <div class="mark" id="brandMark">S</div>
+      <div>
+        <div class="name" id="brandName">Saroofa</div>
+        <div class="sub">self-learning agent</div>
+      </div>
+    </div>
+
+    <button class="newChatBtn" id="newChatBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      New Chat
+    </button>
+
+    <p class="sectionLabel">Recent chats</p>
+    <div class="chatSessionList" id="chatSessionList">
+      <p class="sessionListEmpty">No chats yet — send a message to start one.</p>
+    </div>
+
+    <div class="navlist">
+      <button class="tab active" data-view="chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 11.5a8.4 8.4 0 0 1-1.1 4.2 8.5 8.5 0 0 1-7.4 4.3 8.4 8.4 0 0 1-4.2-1.1L3 21l2.1-5.3A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 4.3-7.4 8.4 8.4 0 0 1 4.2-1.1h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        Chat
+      </button>
+      <button class="tab" data-view="memory">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2v10l7 4"/></svg>
+        Memory Dashboard
+      </button>
+      <button class="tab" data-view="tasks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Task History
+      </button>
+    </div>
+    <div class="rail-foot">
+      <button class="googleBtn" id="googleLoginBtn" type="button">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="view active" id="view-chat">
+      <div id="chatLog"></div>
+      <div id="emptyState" class="emptyState">
+        <div class="glyph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" width="24" height="24"><path d="M21 11.5a8.4 8.4 0 0 1-1.1 4.2 8.5 8.5 0 0 1-7.4 4.3 8.4 8.4 0 0 1-4.2-1.1L3 21l2.1-5.3A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 4.3-7.4 8.4 8.4 0 0 1 4.2-1.1h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </div>
+        <p class="greeting" id="greetingLine">Good day</p>
+        <h3>How can I help you today?</h3>
+        <p>I plan, use tools, evaluate my own results, and remember what worked — try one of these, or ask anything.</p>
+        <div class="chips">
+          <button class="chip" data-fill="Calculate (12 + 8) * 3 / sqrt(4)">Calculate (12+8)*3/sqrt(4)</button>
+          <button class="chip" data-fill="Analyze students.csv and calculate the average salary">Analyze a CSV file</button>
+          <button class="chip" data-fill="Summarize the document I just uploaded">Ask about an uploaded file</button>
+          <button class="chip" data-fill="What is Python used for?">Ask a general question</button>
+        </div>
+      </div>
+      <div class="attachPreview" id="attachPreview">
+        <div class="row">
+          <img id="attachThumb" src="" alt="" style="display:none;" />
+          <span id="attachLabel"></span>
+          <button id="attachRemoveBtn" aria-label="Remove attachment">×</button>
+        </div>
+        <label class="saveToKbRow" id="saveToKbRow" style="display:none;">
+          <input type="checkbox" id="saveToKbCheckbox" />
+          Also save this document to the knowledge base
+        </label>
+      </div>
+      <div class="inputRow">
+        <input type="file" id="fileAttachInput" style="display:none;" />
+
+        <button class="iconBtn" id="attachBtn" aria-label="Attach file or image" title="Attach a photo or a document">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+
+        <div class="attachMenu" id="attachMenu">
+          <button class="attachMenuItem" id="attachMenuPhoto" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg>
+            <span class="label">Photo<span class="sub">Attach an image to this message</span></span>
+          </button>
+          <button class="attachMenuItem" id="attachMenuDocument" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            <span class="label">Document<span class="sub">Add a file to this message</span></span>
+          </button>
+        </div>
+
+        <button class="iconBtn" id="micBtn" aria-label="Voice note (dictate)" title="Voice note - speak, review, then send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4M8 22h8"/></svg>
+        </button>
+        <textarea id="chatInput" rows="1" placeholder="Type your message..."></textarea>
+        <button class="sendBtn" id="sendBtn" aria-label="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="view" id="view-memory">
+      <div class="view-head"><div><h2>Memory Dashboard</h2><p>Every completed task is evaluated and stored as a reusable experience.</p></div></div>
+      <div class="statPanel" id="statGrid"></div>
+      <p class="sectionLabel">Recent experiences</p>
+      <div class="scroll" id="experienceList"></div>
+    </div>
+
+    <div class="view" id="view-tasks">
+      <div class="view-head">
+        <div><h2>Task History</h2><p>Every task the agent has run, in order.</p></div>
+        <label class="scopeToggle">
+          <input type="checkbox" id="taskHistoryScopeToggle" />
+          This chat only
+        </label>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Task</th><th>Status</th><th>Score</th><th>Created</th></tr></thead>
+          <tbody id="taskTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <aside>
+    <div>
+      <h3>
+        <span class="live"></span>
+        <span class="titleText">Agent Activity</span>
+        <button class="activityToggleBtn" id="activityToggleBtn" type="button" title="Show/hide agent activity" aria-label="Toggle agent activity panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </h3>
+      <div id="activityPanel"><p class="empty-hint">Send a task to see the agent's pipeline run in real time — analysis, memory retrieval, planning, tool execution, evaluation, and learning.</p></div>
+    </div>
+    <div>
+      <h3>System Stats</h3>
+      <div class="statGrid2" id="miniStatGrid">
+        <div class="statMini"><div class="num" id="miniTotalTasks">—</div><div class="label">Total tasks</div></div>
+        <div class="statMini"><div class="num" id="miniSuccessRate">—</div><div class="label">Success rate</div></div>
+        <div class="statMini"><div class="num" id="miniConfidence">—</div><div class="label">Avg confidence</div></div>
+        <div class="statMini"><div class="num" id="miniExperiences">—</div><div class="label">Memories stored</div></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const API = "";
+function $(sel) { return document.querySelector(sel); }
+
+// -- Session (chat) identity --------------------------------------------
+
+const SESSION_STORAGE_KEY = "saroofa_session_id";
+let currentSessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+if (!currentSessionId) {
+  currentSessionId = crypto.randomUUID();
+  localStorage.setItem(SESSION_STORAGE_KEY, currentSessionId);
+}
+
+// -- Agent Activity collapse/expand (persisted per-browser) --------------
+
+const ACTIVITY_COLLAPSED_KEY = "saroofa_activity_collapsed";
+function applyActivityCollapsedState(collapsed) {
+  $("#activityPanel").classList.toggle("collapsed", collapsed);
+  $("#activityToggleBtn").classList.toggle("collapsed", collapsed);
+}
+applyActivityCollapsedState(localStorage.getItem(ACTIVITY_COLLAPSED_KEY) === "true");
+$("#activityToggleBtn").addEventListener("click", () => {
+  const nowCollapsed = !$("#activityPanel").classList.contains("collapsed");
+  applyActivityCollapsedState(nowCollapsed);
+  localStorage.setItem(ACTIVITY_COLLAPSED_KEY, String(nowCollapsed));
+});
+
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    btn.classList.add("active");
+    $("#view-" + btn.dataset.view).classList.add("active");
+    if (btn.dataset.view === "memory") loadMemory();
+    if (btn.dataset.view === "tasks") loadTasks();
+  });
+});
+
+document.querySelectorAll(".chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    $("#chatInput").value = chip.dataset.fill;
+    sendMessage();
+  });
+});
+
+function setGreeting() {
+  const hour = new Date().getHours();
+  const label = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const el = $("#greetingLine");
+  if (el) el.textContent = label;
+}
+setGreeting();
+
+async function loadHealth() {
+  try {
+    const res = await fetch(`${API}/api/health`);
+    const data = await res.json();
+    if (data.app_name) {
+      $("#brandName").textContent = data.app_name;
+      const initials = data.app_name.split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+      $("#brandMark").textContent = initials || "AI";
+      document.title = data.app_name;
+    }
+  } catch {
+    /* health check failed silently - System Stats panel will just stay empty */
+  }
+}
+loadHealth();
+
+async function refreshMiniStats() {
+  try {
+    const res = await fetch(`${API}/api/stats`);
+    const data = await res.json();
+    const total = data.total_tasks || 0;
+    const success = data.successful_tasks || 0;
+    $("#miniTotalTasks").textContent = total;
+    $("#miniSuccessRate").textContent = total > 0 ? `${Math.round((success / total) * 100)}%` : "—";
+    $("#miniConfidence").textContent = data.memory && typeof data.memory.average_confidence === "number"
+      ? `${Math.round(data.memory.average_confidence * 100)}%` : "—";
+    $("#miniExperiences").textContent = data.memory ? data.memory.total_experiences : "—";
+  } catch { /* leave placeholders */ }
+}
+refreshMiniStats();
+
+function addMessage(role, text, meta) {
+  $("#emptyState").style.display = "none";
+  const log = $("#chatLog");
+  const wrap = document.createElement("div");
+  wrap.className = "msg " + role;
+  const roleLabel = document.createElement("div");
+  roleLabel.className = "role";
+  roleLabel.textContent = role === "user" ? "You" : "Saroofa";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+  wrap.appendChild(roleLabel);
+  wrap.appendChild(bubble);
+  if (meta) {
+    const metaEl = document.createElement("div");
+    metaEl.className = "meta";
+    metaEl.appendChild(meta);
+    wrap.appendChild(metaEl);
+  }
+  log.appendChild(wrap);
+  log.scrollTop = log.scrollHeight;
+  return wrap;
+}
+
+function renderActivity(steps) {
+  const panel = $("#activityPanel");
+  panel.innerHTML = "";
+  const list = document.createElement("div");
+  list.className = "steps";
+  const isStructured = steps.length > 0 && typeof steps[0] === "object";
+
+  steps.forEach((s, i) => {
+    const row = document.createElement("div");
+    const n = document.createElement("div");
+    n.className = "n";
+    const p = document.createElement("p");
+
+    if (isStructured) {
+      const label = s.name.replace(/_/g, " ");
+      const statusIcon = s.status === "DONE" ? "✓" : s.status === "FAILED" ? "✗" : "…";
+      row.className = "step " + (s.status === "FAILED" ? "done" : s.status === "DONE" ? "done" : "current");
+      n.textContent = statusIcon;
+      if (s.status === "FAILED") { n.style.borderColor = "var(--fail)"; n.style.color = "var(--fail)"; }
+      const durationText = s.duration_seconds !== null && s.duration_seconds !== undefined
+        ? ` (${s.duration_seconds}s)` : "";
+      p.textContent = label.charAt(0).toUpperCase() + label.slice(1) + durationText;
+    } else {
+      const isLast = i === steps.length - 1;
+      row.className = "step " + (isLast ? "current" : "done");
+      n.textContent = isLast ? "…" : String(i + 1).padStart(2, "0");
+      p.textContent = s;
+    }
+    row.appendChild(n);
+    row.appendChild(p);
+    list.appendChild(row);
+  });
+  panel.appendChild(list);
+}
+
+let attachedImage = null;
+let attachedDocument = null; // { file, filename, text, truncated, length }
+
+async function sendMessage(overrideText) {
+  const input = $("#chatInput");
+  const text = (overrideText !== undefined ? overrideText : input.value).trim();
+  if (!text && !attachedImage && !attachedDocument) return null;
+  input.value = "";
+  $("#sendBtn").disabled = true;
+
+  const displayText = text || (attachedDocument ? `(document attached: ${attachedDocument.filename})` : "(image attached)");
+  addMessage("user", displayText);
+  renderActivity(["Sending task to the agent..."]);
+
+  const payload = { message: text, session_id: currentSessionId };
+  if (attachedImage) {
+    payload.image_base64 = attachedImage.base64;
+    payload.image_mime_type = attachedImage.mimeType;
+  }
+  if (attachedDocument) {
+    payload.document_text = attachedDocument.text;
+    payload.document_filename = attachedDocument.filename;
+  }
+
+  // If the user checked "also save to knowledge base", fire that off
+  // separately (fire-and-forget relative to the chat response) - the
+  // document is already in the prompt via document_text either way.
+  if (attachedDocument && $("#saveToKbCheckbox").checked) {
+    const formData = new FormData();
+    formData.append("file", attachedDocument.file);
+    fetch(`${API}/api/knowledge/upload`, { method: "POST", body: formData }).catch(() => {
+      /* best-effort - the inline answer still works even if this fails */
+    });
+  }
+
+  clearAttachment();
+
+  try {
+    const res = await fetch(`${API}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      addMessage("agent", data.detail || "Something went wrong.");
+      renderActivity(["Request failed."]);
+      return null;
+    }
+
+    renderActivity(data.trace && data.trace.length ? data.trace : (data.activity_log || []));
+
+    const meta = document.createElement("span");
+    const badge = document.createElement("span");
+    badge.className = "badge " + data.evaluation.status;
+    badge.textContent = `${data.evaluation.status.replace("_", " ")} · ${data.evaluation.score.toFixed(2)}`;
+    meta.appendChild(badge);
+
+    if (typeof data.agent_confidence === "number") {
+      const conf = document.createElement("span");
+      conf.style.color = "var(--text-dim)";
+      conf.title = "Agent confidence estimate - not factual certainty";
+      conf.textContent = `confidence ${Math.round(data.agent_confidence * 100)}%`;
+      meta.appendChild(conf);
+    }
+
+    if (data.failure_category) {
+      const fc = document.createElement("span");
+      fc.className = "badge FAILURE";
+      fc.textContent = data.failure_category.replace(/_/g, " ");
+      meta.appendChild(fc);
+    }
+
+    if (data.retries > 0) {
+      const r = document.createElement("span");
+      r.style.color = "var(--text-dim)";
+      r.textContent = `${data.retries} retr${data.retries === 1 ? "y" : "ies"}`;
+      meta.appendChild(r);
+    }
+
+    const msgEl = addMessage("agent", data.answer, meta);
+
+    const fbRow = document.createElement("div");
+    fbRow.className = "feedbackBtns";
+    fbRow.style.cssText = "margin-top:8px;display:flex;gap:6px;";
+    const up = document.createElement("button");
+    up.textContent = "Helpful";
+    const down = document.createElement("button");
+    down.textContent = "Not helpful";
+    [up, down].forEach(btn => {
+      btn.style.cssText = "background:none;border:1px solid var(--line);color:var(--text-muted);border-radius:20px;padding:3px 10px;font-family:var(--sans);font-size:11.5px;cursor:pointer;";
+      btn.addEventListener("click", async () => {
+        await fetch(`${API}/api/feedback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            task_id: data.task_id,
+            feedback_type: btn === up ? "THUMBS_UP" : "THUMBS_DOWN",
+            experience_id: data.experience_id,
+          }),
+        });
+        btn.style.color = "var(--success)"; btn.style.borderColor = "var(--success)";
+      });
+    });
+    fbRow.appendChild(up); fbRow.appendChild(down);
+    msgEl.appendChild(fbRow);
+
+    refreshMiniStats();
+    loadSessionList(); // title/last-activity may have just appeared for the first time
+    return data;
+  } catch (err) {
+    addMessage("agent", "Network error — is the backend running?");
+    renderActivity(["Network error."]);
+    return null;
+  } finally {
+    $("#sendBtn").disabled = false;
+  }
+}
+
+$("#sendBtn").addEventListener("click", () => sendMessage());
+$("#chatInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+// -- Chat sessions (sidebar list + New Chat) ------------------------------
+
+function relativeTime(isoString) {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+
+async function loadSessionList() {
+  const list = $("#chatSessionList");
+  try {
+    const res = await fetch(`${API}/api/tasks/sessions`);
+    const sessions = await res.json();
+    list.innerHTML = "";
+    if (sessions.length === 0) {
+      list.innerHTML = `<p class="sessionListEmpty">No chats yet — send a message to start one.</p>`;
+      return;
+    }
+    sessions.forEach(s => {
+      const item = document.createElement("div");
+      item.className = "chatSessionItem" + (s.session_id === currentSessionId ? " active" : "");
+
+      const info = document.createElement("div");
+      info.className = "info";
+      info.innerHTML = `<div class="title">${escapeHtml(s.title)}</div><div class="time">${relativeTime(s.last_activity)}</div>`;
+      info.addEventListener("click", () => switchToSession(s.session_id));
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "sessionDeleteBtn";
+      delBtn.type = "button";
+      delBtn.title = "Delete this chat";
+      delBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>`;
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteSession(s.session_id);
+      });
+
+      item.appendChild(info);
+      item.appendChild(delBtn);
+      list.appendChild(item);
+    });
+  } catch { /* sidebar list just stays empty on failure */ }
+}
+
+async function deleteSession(sessionId) {
+  if (!confirm("Delete this chat? This can't be undone.")) return;
+  try {
+    const res = await fetch(`${API}/api/tasks/sessions/${encodeURIComponent(sessionId)}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("delete failed");
+    if (sessionId === currentSessionId) {
+      currentSessionId = crypto.randomUUID();
+      localStorage.setItem(SESSION_STORAGE_KEY, currentSessionId);
+      $("#chatLog").innerHTML = "";
+      $("#emptyState").style.display = "flex";
+    }
+    loadSessionList();
+    refreshMiniStats();
+  } catch {
+    alert("Couldn't delete this chat - check the server is running and try again.");
+  }
+}
+
+async function loadCurrentSessionMessages() {
+  $("#chatLog").innerHTML = "";
+  $("#emptyState").style.display = "flex";
+  try {
+    const res = await fetch(`${API}/api/tasks?session_id=${encodeURIComponent(currentSessionId)}&limit=100`);
+    const tasks = await res.json();
+    tasks.slice().reverse().forEach(t => {
+      addMessage("user", t.user_input);
+      const meta = document.createElement("span");
+      const badge = document.createElement("span");
+      badge.className = "badge " + t.status;
+      badge.textContent = t.score !== null ? `${t.status.replace("_", " ")} · ${t.score.toFixed(2)}` : t.status.replace("_", " ");
+      meta.appendChild(badge);
+      addMessage("agent", t.result || t.error || "(no response)", meta);
+    });
+  } catch { /* leave empty state up */ }
+  const collapsed = $("#activityPanel").classList.contains("collapsed");
+  $("#activityPanel").innerHTML = `<p class="empty-hint">Send a task to see the agent's pipeline run in real time — analysis, memory retrieval, planning, tool execution, evaluation, and learning.</p>`;
+  applyActivityCollapsedState(collapsed);
+}
+
+function switchToSession(sessionId) {
+  currentSessionId = sessionId;
+  localStorage.setItem(SESSION_STORAGE_KEY, currentSessionId);
+  loadCurrentSessionMessages();
+  loadSessionList();
+  if ($("#view-tasks").classList.contains("active") && $("#taskHistoryScopeToggle").checked) loadTasks();
+}
+
+$("#newChatBtn").addEventListener("click", () => {
+  currentSessionId = crypto.randomUUID();
+  localStorage.setItem(SESSION_STORAGE_KEY, currentSessionId);
+  $("#chatLog").innerHTML = "";
+  $("#emptyState").style.display = "flex";
+  const collapsed = $("#activityPanel").classList.contains("collapsed");
+  $("#activityPanel").innerHTML = `<p class="empty-hint">Send a task to see the agent's pipeline run in real time — analysis, memory retrieval, planning, tool execution, evaluation, and learning.</p>`;
+  applyActivityCollapsedState(collapsed);
+  loadSessionList();
+});
+
+// Initial load for whichever session this browser already had (or just made)
+loadSessionList();
+loadCurrentSessionMessages();
+
+async function loadMemory() {
+  const [statsRes, expRes] = await Promise.all([
+    fetch(`${API}/api/stats`), fetch(`${API}/api/memory?limit=20`),
+  ]);
+  const stats = await statsRes.json();
+  const experiences = await expRes.json();
+
+  const grid = $("#statGrid");
+  grid.innerHTML = "";
+  const items = [
+    ["Total experiences", stats.memory.total_experiences],
+    ["Successful", stats.memory.successful_experiences],
+    ["Failed", stats.memory.failed_experiences],
+    ["Avg. confidence", stats.memory.average_confidence],
+  ];
+  items.forEach(([label, num]) => {
+    const div = document.createElement("div");
+    div.className = "stat";
+    div.innerHTML = `<div class="num">${num}</div><div class="label">${label}</div>`;
+    grid.appendChild(div);
+  });
+
+  const list = $("#experienceList");
+  list.innerHTML = "";
+  if (experiences.length === 0) {
+    list.innerHTML = `<p class="empty-hint">No experiences stored yet — completed tasks will appear here.</p>`;
+    return;
+  }
+  experiences.forEach(exp => {
+    const div = document.createElement("div");
+    div.className = "expCard";
+    div.innerHTML = `<div class="top">
+        <div class="task">${escapeHtml(exp.task_summary)}</div>
+        <span class="badge ${exp.outcome}">${exp.outcome.replace("_", " ")}</span>
+      </div>
+      <div class="lesson">${escapeHtml(exp.lesson)}</div>
+      <div class="stats"><span>confidence ${exp.confidence.toFixed(2)}</span><span>reused ${exp.times_reused}×</span></div>`;
+    list.appendChild(div);
+  });
+}
+
+async function loadTasks() {
+  const onlyCurrent = $("#taskHistoryScopeToggle").checked;
+  const url = onlyCurrent
+    ? `${API}/api/tasks?session_id=${encodeURIComponent(currentSessionId)}`
+    : `${API}/api/tasks`;
+  const res = await fetch(url);
+  const tasks = await res.json();
+  const body = $("#taskTableBody");
+  body.innerHTML = "";
+  if (tasks.length === 0) {
+    body.innerHTML = `<tr><td colspan="4"><span class="empty-hint">No tasks yet.</span></td></tr>`;
+    return;
+  }
+  tasks.forEach(t => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${escapeHtml(t.user_input)}</td>
+      <td><span class="badge ${t.status}">${t.status.replace("_", " ")}</span></td>
+      <td class="score">${t.score !== null ? t.score.toFixed(2) : "—"}</td>
+      <td class="time">${new Date(t.created_at).toLocaleString()}</td>`;
+    body.appendChild(tr);
+  });
+}
+$("#taskHistoryScopeToggle").addEventListener("change", loadTasks);
+
+// -- Attach menu: explicit "Photo" vs "Document" choice --------------------
+// Photo -> attached directly to this message (sent as image_base64).
+// Document -> text is extracted (via /api/knowledge/extract, which does
+// NOT save the file) and injected into this message's prompt as context.
+// The user can additionally check "Also save to knowledge base" to make
+// it permanently searchable too (fires a separate /api/knowledge/upload).
+
+const IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+let pendingUploadMode = null; // "image" | "document"
+
+function closeAttachMenu() { $("#attachMenu").classList.remove("open"); }
+
+$("#attachBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  $("#attachMenu").classList.toggle("open");
+});
+document.addEventListener("click", (e) => {
+  if (!$("#attachMenu").contains(e.target) && e.target !== $("#attachBtn")) closeAttachMenu();
+});
+
+$("#attachMenuPhoto").addEventListener("click", () => {
+  pendingUploadMode = "image";
+  $("#fileAttachInput").accept = "image/png,image/jpeg,image/webp";
+  closeAttachMenu();
+  $("#fileAttachInput").click();
+});
+$("#attachMenuDocument").addEventListener("click", () => {
+  pendingUploadMode = "document";
+  $("#fileAttachInput").accept = ".txt,.md,.csv,.pdf,.docx";
+  closeAttachMenu();
+  $("#fileAttachInput").click();
+});
+
+function clearAttachment() {
+  attachedImage = null;
+  attachedDocument = null;
+  $("#attachPreview").classList.remove("visible");
+  $("#attachThumb").style.display = "none";
+  $("#attachThumb").src = "";
+  $("#saveToKbRow").style.display = "none";
+  $("#saveToKbCheckbox").checked = false;
+  $("#fileAttachInput").value = "";
+}
+
+$("#attachRemoveBtn").addEventListener("click", clearAttachment);
+
+$("#fileAttachInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (pendingUploadMode === "image") {
+    if (!IMAGE_MIME_TYPES.has(file.type)) {
+      alert("Please choose a PNG, JPEG, or WEBP image.");
+      $("#fileAttachInput").value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const base64 = dataUrl.split(",")[1];
+      attachedImage = { base64, mimeType: file.type, previewUrl: dataUrl };
+      $("#attachThumb").src = dataUrl;
+      $("#attachThumb").style.display = "block";
+      $("#attachLabel").textContent = file.name;
+      $("#saveToKbRow").style.display = "none";
+      $("#attachPreview").classList.add("visible");
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // Document: extract its text so it can be attached to this message's
+    // prompt. Nothing is saved to disk/knowledge base at this point -
+    // that only happens if "Also save to knowledge base" gets checked
+    // before the message is sent (see sendMessage()).
+    $("#attachThumb").style.display = "none";
+    $("#attachLabel").textContent = `Reading ${file.name}...`;
+    $("#saveToKbRow").style.display = "none";
+    $("#attachPreview").classList.add("visible");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API}/api/knowledge/extract`, { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Couldn't read this document.");
+      attachedDocument = { file, filename: data.filename, text: data.text, truncated: data.truncated, length: data.length };
+      $("#attachLabel").textContent = data.truncated
+        ? `${data.filename} (showing first ${data.text.length.toLocaleString()} of ${data.length.toLocaleString()} chars)`
+        : `${data.filename} ready to send`;
+      $("#saveToKbRow").style.display = "flex";
+    } catch (err) {
+      $("#attachLabel").textContent = `Couldn't read this file: ${err.message}`;
+      attachedDocument = null;
+    }
+    $("#fileAttachInput").value = "";
+  }
+});
+
+// -- Voice note (dictate mic) -------------------------------------------------
+
+const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizer = null;
+let isRecording = false;
+let finalTranscript = "";
+
+if (!SpeechRecognitionClass) {
+  $("#micBtn").disabled = true;
+  $("#micBtn").title = "Voice input isn't supported in this browser (try Chrome or Edge).";
+} else {
+  recognizer = new SpeechRecognitionClass();
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
+  recognizer.lang = "en-US";
+
+  recognizer.onresult = (event) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) finalTranscript += transcript + " ";
+      else interim += transcript;
+    }
+    $("#chatInput").value = (finalTranscript + interim).trim();
+  };
+
+  recognizer.onerror = () => stopRecording();
+  recognizer.onend = () => stopRecording();
+
+  $("#micBtn").addEventListener("click", () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      finalTranscript = $("#chatInput").value ? $("#chatInput").value + " " : "";
+      try {
+        recognizer.start();
+        isRecording = true;
+        $("#micBtn").classList.add("recording");
+      } catch { /* start() throws if already started */ }
+    }
+  });
+}
+
+function stopRecording() {
+  isRecording = false;
+  $("#micBtn").classList.remove("recording");
+  if (recognizer) {
+    try { recognizer.stop(); } catch { /* already stopped */ }
+  }
+}
+
+// -- Google sign-in (visual placeholder only - not wired to real OAuth yet) --
+
+$("#googleLoginBtn").addEventListener("click", () => {
+  alert("Google sign-in is not connected yet - this is a placeholder for now.");
+});
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
